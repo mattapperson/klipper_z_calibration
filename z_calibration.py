@@ -4,8 +4,12 @@
 # Copyright (C) 2021-2022  Titus Meyer <info@protoloft.org>
 #
 # This file may be distributed under the terms of the GNU GPLv3 license.
+import configparser
 import logging
+
 from mcu import MCU_endstop
+
+error = configparser.Error
 
 class ZCalibrationHelper:
     def __init__(self, config):
@@ -37,6 +41,11 @@ class ZCalibrationHelper:
         self.first_fast = config.getboolean('probing_first_fast', False)
         self.nozzle_site = self._get_site("nozzle_xy_position", "probe_nozzle")
         self.switch_site = self._get_site("switch_xy_position", "probe_switch")
+
+        # Check here for a valid nozzle and switch site vs extending klipper config getters to keep it simple
+        if self.switch_site[0] > self.nozzle_site[0]:
+            raise error("Location for nozzle and switch locations appere to be reversed. Nozzle config has it located behind the switch.")
+
         self.bed_site = self._get_site("bed_xy_position", "probe_bed", True)
         gcode_macro = self.printer.load_object(config, 'gcode_macro')
         self.start_gcode = gcode_macro.load_template(config, 'start_gcode', '')
